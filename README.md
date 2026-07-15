@@ -378,6 +378,125 @@ Despite these limitations, it establishes the mathematical and implementation fo
 
 ---
 
+# Training the Bigram Language Model
+
+After building the model, we train it so it can learn to predict the next character by minimizing the prediction error (loss).
+
+---
+
+## Create the Optimizer
+
+```python
+optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
+```
+
+- **AdamW** updates the model's weights after every training step.
+- `m.parameters()` returns all learnable parameters of the model.
+- `lr=1e-3` is the learning rate, which controls how much the weights change during each update.
+
+---
+
+## Training Loop
+
+```python
+batch_size = 32
+
+for steps in range(100):
+    xb, yb = get_batch("train")
+    logits, loss = m(xb, yb)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+```
+
+### Training Steps
+
+1. **Get a Batch**
+   ```python
+   xb, yb = get_batch("train")
+   ```
+   Randomly samples training data.
+
+2. **Forward Pass**
+   ```python
+   logits, loss = m(xb, yb)
+   ```
+   Computes predictions and the Cross Entropy Loss.
+
+3. **Clear Old Gradients**
+   ```python
+   optimizer.zero_grad(set_to_none=True)
+   ```
+   Removes gradients from the previous iteration.
+
+4. **Backpropagation**
+   ```python
+   loss.backward()
+   ```
+   Computes gradients for all model parameters.
+
+5. **Update Weights**
+   ```python
+   optimizer.step()
+   ```
+   Updates the model using the computed gradients.
+
+---
+
+## Print Final Loss
+
+```python
+print(loss.item())
+```
+
+Displays the final training loss. Lower loss generally indicates better learning.
+
+---
+
+## Generate Text
+
+```python
+print(
+    decode(
+        m.generate(
+            idx=torch.zeros((1,1), dtype=torch.long),
+            max_new_tokens=500
+        )[0].tolist()
+    )
+)
+```
+
+After training, the model generates **500 new characters**, which are decoded back into readable text.
+
+---
+
+## Training Pipeline
+
+```
+Training Data
+      │
+      ▼
+Random Batch
+      │
+      ▼
+Forward Pass
+      │
+      ▼
+Compute Loss
+      │
+      ▼
+Backpropagation
+      │
+      ▼
+Update Weights
+      │
+      ▼
+Repeat
+      │
+      ▼
+Generate Text
+```
+
 # Future Development
 
 The project will gradually evolve into a complete GPT implementation.
@@ -399,31 +518,6 @@ Planned milestones include
 - Checkpoint Saving
 - Model Sampling
 - Complete GPT Architecture
-
----
-
-# Technologies Used
-
-- Python 3
-- PyTorch
-
----
-
-# Learning Philosophy
-
-This repository prioritizes understanding over abstraction.
-
-Every component is implemented manually to develop an intuitive understanding of modern language models instead of relying on high-level frameworks or pre-built architectures.
-
-The implementation intentionally progresses from simple concepts to more sophisticated architectures, ensuring that every stage of the GPT pipeline is fully understood before introducing additional complexity.
-
----
-
-# Acknowledgements
-
-This project is inspired by Andrej Karpathy's educational work on neural networks and language models.
-
-The implementation serves as a personal learning exercise aimed at understanding the internal mechanics of GPT architectures rather than reproducing a production-ready language model.
 
 ---
 
