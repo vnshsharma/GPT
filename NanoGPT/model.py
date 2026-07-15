@@ -55,7 +55,7 @@ def get_batch(split):
         data = train_data
     else:
         data = val_data
-    ix = torch.randint(len(data)-block_size,(block_size,))
+    ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
     return x,y
@@ -113,3 +113,19 @@ logits, loss = m(xb,yb)
 print(logits.shape)
 print(loss)
 print(decode(m.generate(idx=torch.zeros((1,1),dtype=torch.long),max_new_tokens=100)[0].tolist()))
+
+
+# Create a PyTorch optimizer 
+optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
+
+batch_size = 32 
+for steps in range(100):
+    # sample a batch of data
+    xb,yb = get_batch('train')
+    # evaluate the loss 
+    logits , loss = m(xb,yb)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+print(loss.item())
+print(decode(m.generate(idx= torch.zeros((1,1),dtype= torch.long),max_new_tokens=500)[0].tolist()))
