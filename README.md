@@ -529,4 +529,112 @@ Current Stage
 Bigram Language Model
 ```
 
-The repository will continue to be updated as additional components of the Transformer architecture are implemented.
+## Visualizing the Bigram Frequency Matrix
+
+Before constructing a probabilistic language model, it is helpful to understand the dataset itself. After counting every character transition in the training corpus, we obtain a **bigram frequency matrix**, where each entry represents how many times one character is followed by another.
+
+For this project, the vocabulary consists of the lowercase English alphabet along with two special tokens:
+
+- `<S>` — Start of a word
+- `<E>` — End of a word
+
+This gives a vocabulary size of **28 symbols**, resulting in a **28 × 28 matrix**.
+
+Each row represents the current character, while each column represents the next character.
+
+```
+        Next Character
+          a   b   c   ...
+Current a 12  4   0
+        b  3 18   2
+        c  0  5   9
+```
+
+For example,
+
+- `N['a']['b'] = 12` means the transition **a → b** appeared 12 times in the dataset.
+- `N['<S>']['e']` represents the number of words that begin with the letter **e**.
+- `N['n']['<E>']` represents the number of words ending with **n**.
+
+Visualizing this matrix as a heatmap provides an intuitive understanding of the dataset before any probabilities are computed.
+
+The color intensity of each cell corresponds to the transition frequency:
+
+- Darker cells represent frequently occurring character pairs.
+- Lighter cells represent rare transitions.
+- Empty or nearly white cells indicate transitions that never occurred.
+
+Each cell is annotated with:
+
+1. The corresponding character pair (bigram).
+2. The number of times that bigram appears in the dataset.
+
+This visualization serves two important purposes.
+
+### 1. Understanding the Dataset
+
+Instead of looking at thousands of names individually, the heatmap summarizes the entire dataset into a single representation. It immediately reveals common spelling patterns and frequently occurring character transitions.
+
+For example, in an English names dataset, transitions such as
+
+```
+th
+an
+er
+li
+```
+
+appear much more frequently than uncommon combinations like
+
+```
+qx
+zj
+vf
+```
+
+The visualization makes these statistical patterns obvious.
+
+### 2. Verifying the Counting Process
+
+Before converting counts into probabilities, it is important to verify that the counting logic is correct.
+
+Displaying the matrix allows us to inspect whether:
+
+- every transition has been counted correctly,
+- start and end tokens appear in the expected locations,
+- no unexpected values exist,
+- the overall distribution matches our intuition about the dataset.
+
+Finding mistakes at this stage is significantly easier than debugging them after probability normalization or model training.
+
+### Relation to the Bigram Language Model
+
+The matrix itself is **not the language model**.
+
+It is simply a collection of raw counts.
+
+The next step is to normalize every row of this matrix so that each row sums to one. These normalized values become transition probabilities,
+
+\[
+P(\text{next character} \mid \text{current character})
+\]
+
+which form the core of the Bigram Language Model.
+
+In other words,
+
+```
+Dataset
+    ↓
+Count character transitions
+    ↓
+Bigram Frequency Matrix
+    ↓
+Normalize each row
+    ↓
+Transition Probability Matrix
+    ↓
+Bigram Language Model
+```
+
+The heatmap is therefore an intermediate visualization that helps us understand the statistical structure of the dataset before transforming raw counts into probabilities for text generation.
