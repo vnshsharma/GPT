@@ -145,3 +145,38 @@ probs = counts / counts.sum(1,keepdim=True)
 print(probs)
 
 # (5,27) @ (27,27) -> (5,27)
+
+nlls = torch.zeros(5)
+for i in range(5):
+    # i-th bigram:
+    x = xs[i].item() # input character index
+    y = ys[i].item() # label character index 
+    print('--------')
+    print(f'bigram example {i+1}: {itos[x]}{itos[y]} (indexes {x},{y})')
+    print('input to the neural net:',x)
+    print('output probabilities from the neural net:',probs[i])
+    print('label (actual next chaaracter):',y)
+    p = probs[i,y]
+    print('probability assigned by the net to the correct character:',p.item())
+    logp = torch.log(p)
+    print('log likelihood:',logp.item())
+    null = -logp
+    print('negative log likelihood:',null.item())
+    nlls[i] = null
+
+print('=========')
+print('average negative log likelihood, i.e. loss =',nlls.mean().item())
+
+
+# --------- !!! OPTIMIZATION !!!  --------------
+# randomly initialize 27 neurons' weights. each neuron receives 27 inputs
+g = torch.Generator().manual_seed(2147483647)
+W = torch.randn((27, 27), generator=g, requires_grad=True)
+
+
+# forward pass
+xenc = F.one_hot(xs, num_classes=27).float() # input to the network: one-hot encoding
+logits = xenc @ W # predict log-counts
+counts = logits.exp() # counts, equivalent to N
+probs = counts / counts.sum(1, keepdims=True) # probabilities for next character
+loss = -probs[torch.arange(5), ys].log().mean()
