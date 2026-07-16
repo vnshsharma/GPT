@@ -10,10 +10,12 @@ for w in words:
         bigram = (ch1,ch2)
         b[bigram] = b.get(bigram,0)+1
 
-# print(sorted(b.items(), key= lambda kv: -kv[1]))
+sorted(b.items(), key= lambda kv: -kv[1])
 
 import torch
-N = torch.zeros((28,28),dtype=torch.int32)
+
+N = torch.zeros((27,27),dtype=torch.int32)
+
 chars = (sorted(list(set(''.join(words)))))
 stoi = {s:i+1 for i,s in enumerate(chars)}
 stoi['.'] = 0
@@ -26,7 +28,6 @@ for w in words:
         ix2 = stoi[ch2]
         N[ix1,ix2] += 1
 
-        b[bigram] = b.get(bigram,0)+1
 
 import matplotlib.pyplot as plt
 plt.figure(figsize=(18,18))
@@ -45,10 +46,68 @@ for i in range(27):
 plt.axis("off")
 
 p = N[0].float()
-p = p / p.sum()
-# print(p)   # This is the probability of the sampling data
+p = p / p.sum()  
+
+
+g = torch.Generator().manual_seed(2147483647)
+ix = torch.multinomial(p,num_samples=1,replacement=True,generator=g).item()
 
 g = torch.Generator().manual_seed(2147483647)
 p = torch.rand(3,generator=g)
 p = p/p.sum()
-print(p)
+
+# print(torch.multinomial(p,num_samples=100,replacement=True,generator=g))
+
+# print(p.shape)
+
+P = N.float()
+# P = P/P.sum()
+# print((P.sum(1,keepdim=True)))
+P = P/P.sum(1,keepdim=True)
+
+
+g = torch.Generator().manual_seed(2147483647)
+for i in range(5):
+    out = []
+    ix = 0 
+    while True:
+
+        p = P[ix]
+
+        ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
+        out.append(itos[ix])
+        if ix == 0:
+            break
+    print(''.join(out))
+
+print('\n')
+# Now we find the efficiency of this model
+
+# Loss Function 
+log_likelihood = 0.0
+n = 0
+
+for w in words:
+    chs = ['.'] + list(w) + ['.']
+    for ch1, ch2 in zip(chs,chs[1:]):
+        ix1 = stoi[ch1]
+        ix2 = stoi[ch2]
+        N[ix1,ix2] += 1
+        prob = P[ix1, ix2]
+        logprob = torch.log(prob)
+        log_likelihood += logprob
+        n += 1
+        # print(f'{ch1}{ch2}: {prob:.4f} {logprob:.4f}')
+
+print(f'{log_likelihood=}')
+nll = -log_likelihood
+print(f'{nll=}')
+print(f'{nll/n=}')   # This will be usually the loss function
+# That is the quality of this model, 
+# the lower it is better we are, the higher it is the worse of we are.
+
+
+# GOAL: maximize likelihood of the data w.r.t. model parameters (statistical modeling)
+# equivalent to maximizing the log likelihood (because log is monotonic)
+# equivalent to minimizing the negative log likelihood
+# equivalent to minimizing the average negative log likelihood
