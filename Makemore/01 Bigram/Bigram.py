@@ -134,3 +134,14 @@ xenc = F.one_hot(xs,num_classes=27).float()
 print(xenc)
 plt.imshow(xenc)
 # plt.show()
+
+
+## One layer of neurons implemented with matrix multiplication
+W = torch.randn((27,27))
+
+logits = xenc @ W   # log counts 
+counts = logits.exp() # equivalent N
+probs = counts / counts.sum(1,keepdim=True)
+print(probs)
+
+# (5,27) @ (27,27) -> (5,27)
