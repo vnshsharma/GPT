@@ -60,7 +60,7 @@ p = p/p.sum()
 
 # print(p.shape)
 
-P = N.float()
+P = (N+1).float()
 # P = P/P.sum()
 # print((P.sum(1,keepdim=True)))
 P = P/P.sum(1,keepdim=True)
@@ -87,6 +87,11 @@ print('\n')
 log_likelihood = 0.0
 n = 0
 
+# GOAL: maximize likelihood of the data w.r.t. model parameters (statistical modeling)
+# equivalent to maximizing the log likelihood (because log is monotonic)
+# equivalent to minimizing the negative log likelihood
+# equivalent to minimizing the average negative log likelihood
+
 for w in words:
     chs = ['.'] + list(w) + ['.']
     for ch1, ch2 in zip(chs,chs[1:]):
@@ -102,12 +107,30 @@ for w in words:
 print(f'{log_likelihood=}')
 nll = -log_likelihood
 print(f'{nll=}')
-print(f'{nll/n=}')   # This will be usually the loss function
-# That is the quality of this model, 
-# the lower it is better we are, the higher it is the worse of we are.
+print(f'{nll/n=}')   # This will be usually the loss function => That is the quality of this model, 
+print('\n')
+
+# create the training set of bigrams (x,y)
+xs, ys = [], []
+
+for w in words[:1]:
+    chs = ['.'] + list(w) + ['.']
+    for ch1, ch2 in zip(chs,chs[1:]):
+        ix1 = stoi[ch1]
+        ix2 = stoi[ch2]
+        print(ch1,ch2)
+        xs.append(ix1)
+        ys.append(ix2)
+
+xs = torch.tensor(xs)
+ys = torch.tensor(ys)
+print(xs)
+print(ys)
 
 
-# GOAL: maximize likelihood of the data w.r.t. model parameters (statistical modeling)
-# equivalent to maximizing the log likelihood (because log is monotonic)
-# equivalent to minimizing the negative log likelihood
-# equivalent to minimizing the average negative log likelihood
+# Feeding integer into the neural nets/ one hot encoding 
+import torch.nn.functional as F
+xenc = F.one_hot(xs,num_classes=27).float()
+print(xenc)
+plt.imshow(xenc)
+# plt.show()
