@@ -180,3 +180,13 @@ logits = xenc @ W # predict log-counts
 counts = logits.exp() # counts, equivalent to N
 probs = counts / counts.sum(1, keepdims=True) # probabilities for next character
 loss = -probs[torch.arange(5), ys].log().mean()
+
+
+print(loss.item())
+
+
+# backward pass
+W.grad = None # set to zero the gradient
+loss.backward()
+
+W.data += -0.1 * W.grad
