@@ -638,3 +638,202 @@ Bigram Language Model
 ```
 
 The heatmap is therefore an intermediate visualization that helps us understand the statistical structure of the dataset before transforming raw counts into probabilities for text generation.
+
+# Neural Network Bigram Language Model
+
+This section replaces the statistical bigram count matrix with a simple **single-layer neural network**. Instead of storing transition counts manually, the network learns them automatically by optimizing its weights.
+
+---
+
+## Evaluating the Statistical Model
+
+Before training the neural network, we first evaluate the quality of the statistical bigram model using **Negative Log Likelihood (NLL)**.
+
+For every bigram in the dataset:
+
+1. Find its probability from the probability matrix `P`.
+2. Compute its logarithm.
+3. Sum the log probabilities.
+4. Negate the result to obtain the Negative Log Likelihood.
+
+```python
+logprob = torch.log(prob)
+log_likelihood += logprob
+```
+
+The average NLL is computed as
+
+```python
+nll = -log_likelihood / n
+```
+
+A **smaller NLL** indicates a better language model because it assigns higher probabilities to the correct next characters.
+
+---
+
+## Creating the Training Dataset
+
+The neural network learns from **input-output character pairs**.
+
+For every word,
+
+```
+emma
+```
+
+we generate
+
+```
+. -> e
+e -> m
+m -> m
+m -> a
+a -> .
+```
+
+The input character indices are stored in `xs`, while the corresponding target character indices are stored in `ys`.
+
+---
+
+## One-Hot Encoding
+
+Neural networks cannot directly process integer indices.
+
+Each input character is converted into a **one-hot vector** of length 27.
+
+Example:
+
+```
+Character: c
+
+[0 0 1 0 0 ... 0]
+```
+
+Only the position corresponding to the current character is set to **1**.
+
+---
+
+## Single Layer Neural Network
+
+The network consists of a single weight matrix.
+
+```python
+W = torch.randn((27,27))
+```
+
+- 27 input features
+- 27 output neurons
+
+Each neuron predicts the score for one possible next character.
+
+---
+
+## Forward Pass
+
+The network computes
+
+```python
+logits = xenc @ W
+```
+
+where
+
+- `xenc` is the one-hot encoded input.
+- `W` is the learnable weight matrix.
+- `logits` are the raw prediction scores.
+
+These scores are **not probabilities**.
+
+---
+
+## Converting Scores into Probabilities
+
+The logits are transformed into positive values using the exponential function.
+
+```python
+counts = logits.exp()
+```
+
+These values are then normalized.
+
+```python
+probs = counts / counts.sum(1, keepdim=True)
+```
+
+Every row now represents a valid probability distribution whose values sum to **1**.
+
+---
+
+## Computing the Loss
+
+For every training example, the network selects the probability assigned to the correct next character.
+
+```python
+loss = -probs[torch.arange(5), ys].log().mean()
+```
+
+This is the **Average Negative Log Likelihood (NLL)**.
+
+A lower loss means the network is assigning higher probabilities to the correct character transitions.
+
+---
+
+## Optimization
+
+The network starts with randomly initialized weights.
+
+```python
+W = torch.randn((27,27), requires_grad=True)
+```
+
+Setting `requires_grad=True` tells PyTorch to compute gradients during backpropagation.
+
+During training:
+
+1. Perform a forward pass.
+2. Compute the loss.
+3. Calculate gradients.
+4. Update the weights.
+
+After many iterations, the weight matrix learns the character transition probabilities directly from the data.
+
+---
+
+## Summary
+
+This implementation replaces the manually constructed bigram probability matrix with a neural network.
+
+The overall pipeline is:
+
+```
+Training Words
+      │
+      ▼
+Create Bigrams
+      │
+      ▼
+One-Hot Encoding
+      │
+      ▼
+Matrix Multiplication
+      │
+      ▼
+Logits
+      │
+      ▼
+Exponential
+      │
+      ▼
+Probabilities
+      │
+      ▼
+Negative Log Likelihood
+      │
+      ▼
+Backpropagation
+      │
+      ▼
+Update Weights
+```
+
+Although this network contains only a single linear layer, it introduces the complete neural network training pipeline that will later be extended into deeper models and eventually transformer-based language models.
