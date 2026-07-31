@@ -1,297 +1,566 @@
-# NanoGPT: Building a GPT from Scratch in PyTorch
+# NanoGPT - Building a Bigram Language Model from Scratch
 
-## Overview
-
-This repository documents the step-by-step implementation of a character-level language model using PyTorch, following the educational concepts presented by Andrej Karpathy in his NanoGPT series.
-
-The objective of this project is not merely to reproduce an existing implementation, but to gain a complete understanding of every component involved in constructing a modern Generative Pre-trained Transformer (GPT) architecture from first principles.
-
-The project begins with the simplest possible language model—the Bigram Language Model—and will gradually evolve into a complete Transformer-based GPT capable of generating coherent text.
-
-Every stage of development is implemented manually with minimal abstractions to emphasize understanding over convenience.
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red)
+![Status](https://img.shields.io/badge/Status-Learning-green)
 
 ---
 
-# Project Objectives
+# 📖 Overview
 
-The primary goals of this project are:
+This repository contains my implementation of the **Bigram Language Model** using **PyTorch**, inspired by **Andrej Karpathy's NanoGPT** project.
 
-- Understand how language models represent text.
-- Learn how tokenization works at the character level.
-- Build datasets suitable for neural language modeling.
-- Understand embeddings and why they are useful.
-- Learn how autoregressive text generation works.
-- Implement loss computation using Cross Entropy.
-- Develop intuition behind Transformer architectures.
-- Progress toward implementing a complete GPT model from scratch.
+The goal of this project is **not simply to train a language model**, but to understand every component that makes modern Large Language Models (LLMs) work.
+
+Rather than using high-level libraries like Hugging Face Transformers, this project starts from the very basics and gradually builds toward GPT.
+
+This repository documents every step of that learning journey.
 
 ---
 
-# Current Implementation
-
-The repository currently includes the complete implementation of a Bigram Language Model.
-
-Implemented components include:
-
-- Reading raw text data
-- Vocabulary construction
-- Character-level tokenization
-- Encoding and decoding utilities
-- Tensor conversion
-- Dataset splitting
-- Batch generation
-- Context-target preparation
-- Bigram Language Model
-- Cross Entropy loss computation
-- Autoregressive text generation
-
----
-
-# Repository Structure
+# 📂 Project Structure
 
 ```
-.
-├── input.txt
+NanoGPT/
+│
+├── data/
+│   └── input.txt
+│
 ├── model.py
+│
 └── README.md
 ```
 
-| File | Description |
-|------|-------------|
-| input.txt | Training corpus |
-| model.py | Complete implementation of the Bigram Language Model |
-| README.md | Project documentation |
+## Folder Explanation
 
----
+### data/
 
-# Character-Level Tokenization
-
-Unlike word-level tokenizers, this project begins with a character-level vocabulary.
-
-Each unique character appearing in the dataset is assigned a unique integer identifier.
-
-Example:
+Contains the training dataset.
 
 ```
-Vocabulary
-
-abcdefghijklmnopqrstuvwxyz .,!?'
+data/
+    input.txt
 ```
 
-Character-to-index mapping:
+This text file is the only source of knowledge for the model.
 
-```python
-'a' -> 0
-'b' -> 1
-'c' -> 2
-...
-```
-
-Index-to-character mapping:
-
-```python
-0 -> 'a'
-1 -> 'b'
-2 -> 'c'
-...
-```
-
-Two helper functions are created:
-
-```python
-encode(text)
-```
-
-Converts text into integer tokens.
-
-Example:
-
-```
-hello
-
-↓
-
-[7,4,11,11,14]
-```
-
-```python
-decode(tokens)
-```
-
-Converts integer tokens back into readable text.
-
-```
-[7,4,11,11,14]
-
-↓
-
-hello
-```
-
----
-
-# Dataset Preparation
-
-The complete corpus is converted into a one-dimensional PyTorch tensor.
-
-```python
-data = torch.tensor(encode(text), dtype=torch.long)
-```
-
-Example:
-
-```
-Input Text
-
-hello world
-
-↓
-
-Tensor
-
-[7,4,11,11,14,26,22,14,17,11,3]
-```
-
-This tensor becomes the foundation for all subsequent training.
-
----
-
-# Training and Validation Split
-
-To evaluate the model objectively, the dataset is divided into two independent subsets.
-
-Training Set
-
-- Used for learning model parameters.
-
-Validation Set
-
-- Used only to evaluate performance.
-
-Current split:
-
-```
-90% Training
-10% Validation
-```
-
-Implementation:
-
-```python
-n = int(0.9 * len(data))
-
-train_data = data[:n]
-val_data = data[n:]
-```
-
----
-
-# Batch Generation
-
-Rather than processing the entire dataset simultaneously, training is performed using randomly sampled mini-batches.
-
-Each batch consists of multiple sequences of fixed length.
+The model learns language patterns solely from this file.
 
 Example
 
-Context
-
 ```
-hello wo
+Hello World
 ```
 
-Target
+or Shakespeare
 
 ```
-ello wor
+To be, or not to be...
 ```
-
-Every character attempts to predict the next character.
-
-For example
-
-| Input | Target |
-|--------|--------|
-| h | e |
-| e | l |
-| l | l |
-| l | o |
-| o | (space) |
-
-This transforms language modeling into a supervised learning problem.
 
 ---
 
-# Bigram Language Model
+### model.py
 
-The Bigram Language Model is the simplest possible neural language model.
+Contains the complete implementation of
 
-Its prediction depends only on the current token.
+- Character Tokenizer
+- Vocabulary Creation
+- Batch Generator
+- Bigram Language Model
+- Loss Function
+- Optimizer
+- Training Loop
+- Text Generation
 
-Mathematically,
+Everything is written manually without using pretrained models.
 
+---
+
+# Installing
+
+Clone the repository
+
+```bash
+git clone https://github.com/yourusername/NanoGPT.git
 ```
-P(next token | current token)
+
+Move into the project
+
+```bash
+cd NanoGPT
 ```
 
-No previous context is considered.
+Install PyTorch
 
-The model contains a single learnable embedding matrix.
+```bash
+pip install torch
+```
+
+---
+
+# Running
+
+Execute
+
+```bash
+python model.py
+```
+
+---
+
+# Understanding the Code
+
+---
+
+# 1. Import Libraries
 
 ```python
-nn.Embedding(vocab_size, vocab_size)
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
 ```
 
-Each row corresponds to one vocabulary token.
+### torch
 
-Each row stores the logits representing the probability distribution of the next possible character.
+Provides tensor operations and GPU acceleration.
 
-Conceptually,
+---
+
+### torch.nn
+
+Contains neural network layers such as
+
+- Linear
+- Embedding
+- Conv
+- LSTM
+
+---
+
+### torch.nn.functional
+
+Contains mathematical operations such as
+
+- Softmax
+- Cross Entropy
+- ReLU
+
+without creating layers.
+
+---
+
+# 2. Hyperparameters
+
+```python
+batch_size = 32
+block_size = 8
+max_iters = 3000
+eval_interval = 300
+learning_rate = 1e-2
+eval_iters = 200
+```
+
+These values control the training process.
+
+---
+
+## batch_size
 
 ```
-Current Character
-
-↓
-
-Embedding Lookup
-
-↓
-
-Vocabulary Logits
-
-↓
-
-Softmax
-
-↓
-
-Probability Distribution
-
-↓
-
-Sample Next Character
+32
 ```
 
-No attention mechanism is used.
+The number of sequences processed simultaneously.
 
-No positional information is used.
+Instead of learning from one sentence at a time,
 
-No hidden layers are present.
+the model learns from **32 examples together.**
 
-The model learns only transition probabilities between adjacent characters.
+---
+
+## block_size
+
+```
+8
+```
+
+Maximum context length.
+
+The model can only look at the previous **8 characters** when predicting the next one.
+
+Example
+
+```
+Machine
+```
+
+If block size is 8
+
+the model only sees
+
+```
+Machine
+```
+
+before predicting the next character.
+
+---
+
+## max_iters
+
+```
+3000
+```
+
+Number of optimization steps.
+
+More iterations generally improve learning.
+
+---
+
+## learning_rate
+
+```
+0.01
+```
+
+Controls how large each optimization step is.
+
+Too large
+
+↓
+
+Training becomes unstable.
+
+Too small
+
+↓
+
+Training becomes very slow.
+
+---
+
+# 3. Device Selection
+
+```python
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+```
+
+If NVIDIA GPU is available
+
+↓
+
+Training runs on GPU.
+
+Otherwise
+
+↓
+
+CPU is used.
+
+---
+
+# 4. Random Seed
+
+```python
+torch.manual_seed(1337)
+```
+
+This fixes randomness.
+
+Every run produces the same random numbers.
+
+Useful for
+
+- debugging
+- reproducibility
+- comparison
+
+---
+
+# 5. Reading Dataset
+
+```python
+with open('data/input.txt','r',encoding='utf-8') as f:
+    text = f.read()
+```
+
+Reads the entire text file into memory.
+
+Suppose
+
+```
+Hello
+```
+
+Then
+
+```
+text = "Hello"
+```
+
+---
+
+# 6. Vocabulary Creation
+
+```python
+chars = sorted(list(set(text)))
+```
+
+Steps
+
+```
+Original
+
+banana
+```
+
+↓
+
+Unique
+
+```
+{a,b,n}
+```
+
+↓
+
+Sorted
+
+```
+[a,b,n]
+```
+
+This becomes our vocabulary.
+
+---
+
+# 7. Character Mapping
+
+```python
+stoi
+```
+
+String
+
+↓
+
+Integer
+
+Example
+
+```
+a → 0
+
+b → 1
+
+n → 2
+```
+
+---
+
+```python
+itos
+```
+
+Integer
+
+↓
+
+Character
+
+```
+0 → a
+
+1 → b
+
+2 → n
+```
+
+These dictionaries allow conversion in both directions.
+
+---
+
+# 8. Encoding
+
+```python
+encode = lambda s:[stoi[c] for c in s]
+```
+
+Example
+
+```
+cat
+```
+
+↓
+
+```
+[2,0,18]
+```
+
+The neural network only understands numbers.
+
+---
+
+# 9. Decoding
+
+```python
+decode = lambda l:''.join(...)
+```
+
+Example
+
+```
+[2,0,18]
+```
+
+↓
+
+```
+cat
+```
+
+---
+
+# 10. Tensor Conversion
+
+```python
+data = torch.tensor(...)
+```
+
+Converts the encoded text into a PyTorch tensor.
+
+Neural networks operate on tensors rather than Python lists.
+
+---
+
+# 11. Train Validation Split
+
+```python
+90%
+```
+
+↓
+
+Training
+
+```
+10%
+```
+
+↓
+
+Validation
+
+Validation data checks whether the model is learning general language patterns rather than memorizing the training data.
+
+---
+
+# 12. Batch Generation
+
+```python
+get_batch()
+```
+
+Randomly selects
+
+```
+batch_size
+```
+
+different positions.
+
+Creates
+
+```
+x
+```
+
+Current context.
+
+and
+
+```
+y
+```
+
+Expected next characters.
+
+Example
+
+```
+Input
+
+hell
+
+Target
+
+ello
+```
+
+---
+
+# 13. Estimate Loss
+
+Every
+
+```
+300
+```
+
+iterations
+
+the model measures
+
+Training Loss
+
+Validation Loss
+
+to monitor learning.
+
+---
+
+# 14. Bigram Language Model
+
+The heart of the project.
+
+```python
+class BigramLanguageModel(nn.Module)
+```
+
+---
+
+## Embedding Layer
+
+```python
+nn.Embedding(vocab_size,vocab_size)
+```
+
+Every character gets its own learnable vector.
+
+Initially
+
+Random.
+
+After training
+
+The vectors learn language statistics.
 
 ---
 
 # Forward Pass
 
-During training, the model receives
+Input
 
 ```
-Input Tokens
+hello
+```
 
 ↓
 
-Embedding Lookup
+Embedding
 
 ↓
 
@@ -300,540 +569,190 @@ Logits
 ↓
 
 Cross Entropy Loss
-```
 
-The logits have dimensions
+↓
 
-```
-(Batch Size,
- Context Length,
- Vocabulary Size)
-```
-
-Before computing the loss, the tensors are reshaped into
-
-```
-(B × T, Vocabulary Size)
-```
-
-and
-
-```
-(B × T)
-```
-
-to satisfy the requirements of PyTorch's Cross Entropy Loss.
-
----
-
-# Loss Function
-
-The training objective is to minimize Cross Entropy Loss.
-
-```python
-loss = F.cross_entropy(logits, targets)
-```
-
-Cross Entropy measures how different the predicted probability distribution is from the true target distribution.
-
-Lower loss indicates better predictions.
-
----
-
-# Text Generation
-
-Text generation is autoregressive.
-
-The process is repeated until the desired sequence length is reached.
-
-Algorithm
-
-1. Feed the current sequence into the model.
-2. Compute logits.
-3. Select the logits corresponding to the final time step.
-4. Apply Softmax to obtain probabilities.
-5. Sample the next token.
-6. Append the sampled token.
-7. Repeat.
-
-This process enables the model to generate arbitrary-length sequences after training.
-
----
-
-# Current Limitations
-
-The current model is intentionally simple.
-
-Its limitations include:
-
-- No contextual understanding.
-- No positional information.
-- No self-attention.
-- No multi-head attention.
-- Cannot model long-range dependencies.
-- Limited expressive power.
-- Learns only immediate character transitions.
-
-Despite these limitations, it establishes the mathematical and implementation foundation required for Transformer models.
-
----
-
-# Training the Bigram Language Model
-
-After building the model, we train it so it can learn to predict the next character by minimizing the prediction error (loss).
-
----
-
-## Create the Optimizer
-
-```python
-optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
-```
-
-- **AdamW** updates the model's weights after every training step.
-- `m.parameters()` returns all learnable parameters of the model.
-- `lr=1e-3` is the learning rate, which controls how much the weights change during each update.
-
----
-
-## Training Loop
-
-```python
-batch_size = 32
-
-for steps in range(100):
-    xb, yb = get_batch("train")
-    logits, loss = m(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
-```
-
-### Training Steps
-
-1. **Get a Batch**
-   ```python
-   xb, yb = get_batch("train")
-   ```
-   Randomly samples training data.
-
-2. **Forward Pass**
-   ```python
-   logits, loss = m(xb, yb)
-   ```
-   Computes predictions and the Cross Entropy Loss.
-
-3. **Clear Old Gradients**
-   ```python
-   optimizer.zero_grad(set_to_none=True)
-   ```
-   Removes gradients from the previous iteration.
-
-4. **Backpropagation**
-   ```python
-   loss.backward()
-   ```
-   Computes gradients for all model parameters.
-
-5. **Update Weights**
-   ```python
-   optimizer.step()
-   ```
-   Updates the model using the computed gradients.
-
----
-
-## Print Final Loss
-
-```python
-print(loss.item())
-```
-
-Displays the final training loss. Lower loss generally indicates better learning.
-
----
-
-## Generate Text
-
-```python
-print(
-    decode(
-        m.generate(
-            idx=torch.zeros((1,1), dtype=torch.long),
-            max_new_tokens=500
-        )[0].tolist()
-    )
-)
-```
-
-After training, the model generates **500 new characters**, which are decoded back into readable text.
-
----
-
-## Training Pipeline
-
-```
-Training Data
-      │
-      ▼
-Random Batch
-      │
-      ▼
-Forward Pass
-      │
-      ▼
-Compute Loss
-      │
-      ▼
 Backpropagation
-      │
-      ▼
-Update Weights
-      │
-      ▼
+
+---
+
+# Cross Entropy Loss
+
+```python
+loss = F.cross_entropy(...)
+```
+
+Measures
+
+How wrong
+
+the predictions are.
+
+Smaller loss
+
+↓
+
+Better predictions.
+
+---
+
+# 15. Text Generation
+
+The model predicts
+
+one character
+
+↓
+
+adds it
+
+↓
+
+predicts again
+
+↓
+
+adds it
+
+↓
+
+continues until
+
+```
+max_new_tokens
+```
+
+is reached.
+
+---
+
+# 16. Optimizer
+
+```python
+AdamW
+```
+
+Updates the model parameters using gradients.
+
+This is how learning happens.
+
+---
+
+# 17. Training Loop
+
+Every iteration
+
+```
+Get Batch
+      ↓
+Forward Pass
+      ↓
+Compute Loss
+      ↓
+Backward Pass
+      ↓
+Optimizer Step
+      ↓
 Repeat
+```
+
+---
+
+# Computational Graph
+
+```
+input.txt
       │
       ▼
-Generate Text
-```
-
-# Future Development
-
-The project will gradually evolve into a complete GPT implementation.
-
-Planned milestones include
-
-- Token Embeddings
-- Positional Embeddings
-- Self-Attention
-- Scaled Dot Product Attention
-- Multi-Head Attention
-- Feed Forward Networks
-- Residual Connections
-- Layer Normalization
-- Dropout
-- Transformer Blocks
-- Training Loop
-- Evaluation Pipeline
-- Checkpoint Saving
-- Model Sampling
-- Complete GPT Architecture
-
----
-
-# Project Status
-
-Current Stage
-
-```
-Bigram Language Model
-```
-
-## Visualizing the Bigram Frequency Matrix
-
-Before constructing a probabilistic language model, it is helpful to understand the dataset itself. After counting every character transition in the training corpus, we obtain a **bigram frequency matrix**, where each entry represents how many times one character is followed by another.
-
-For this project, the vocabulary consists of the lowercase English alphabet along with two special tokens:
-
-- `<S>` — Start of a word
-- `<E>` — End of a word
-
-This gives a vocabulary size of **28 symbols**, resulting in a **28 × 28 matrix**.
-
-Each row represents the current character, while each column represents the next character.
-
-```
-        Next Character
-          a   b   c   ...
-Current a 12  4   0
-        b  3 18   2
-        c  0  5   9
-```
-
-For example,
-
-- `N['a']['b'] = 12` means the transition **a → b** appeared 12 times in the dataset.
-- `N['<S>']['e']` represents the number of words that begin with the letter **e**.
-- `N['n']['<E>']` represents the number of words ending with **n**.
-
-Visualizing this matrix as a heatmap provides an intuitive understanding of the dataset before any probabilities are computed.
-
-The color intensity of each cell corresponds to the transition frequency:
-
-- Darker cells represent frequently occurring character pairs.
-- Lighter cells represent rare transitions.
-- Empty or nearly white cells indicate transitions that never occurred.
-
-Each cell is annotated with:
-
-1. The corresponding character pair (bigram).
-2. The number of times that bigram appears in the dataset.
-
-This visualization serves two important purposes.
-
-### 1. Understanding the Dataset
-
-Instead of looking at thousands of names individually, the heatmap summarizes the entire dataset into a single representation. It immediately reveals common spelling patterns and frequently occurring character transitions.
-
-For example, in an English names dataset, transitions such as
-
-```
-th
-an
-er
-li
-```
-
-appear much more frequently than uncommon combinations like
-
-```
-qx
-zj
-vf
-```
-
-The visualization makes these statistical patterns obvious.
-
-### 2. Verifying the Counting Process
-
-Before converting counts into probabilities, it is important to verify that the counting logic is correct.
-
-Displaying the matrix allows us to inspect whether:
-
-- every transition has been counted correctly,
-- start and end tokens appear in the expected locations,
-- no unexpected values exist,
-- the overall distribution matches our intuition about the dataset.
-
-Finding mistakes at this stage is significantly easier than debugging them after probability normalization or model training.
-
-### Relation to the Bigram Language Model
-
-The matrix itself is **not the language model**.
-
-It is simply a collection of raw counts.
-
-The next step is to normalize every row of this matrix so that each row sums to one. These normalized values become transition probabilities,
-
-\[
-P(\text{next character} \mid \text{current character})
-\]
-
-which form the core of the Bigram Language Model.
-
-In other words,
-
-```
-Dataset
-    ↓
-Count character transitions
-    ↓
-Bigram Frequency Matrix
-    ↓
-Normalize each row
-    ↓
-Transition Probability Matrix
-    ↓
-Bigram Language Model
-```
-
-The heatmap is therefore an intermediate visualization that helps us understand the statistical structure of the dataset before transforming raw counts into probabilities for text generation.
-
-# Neural Network Bigram Language Model
-
-This section replaces the statistical bigram count matrix with a simple **single-layer neural network**. Instead of storing transition counts manually, the network learns them automatically by optimizing its weights.
-
----
-
-## Evaluating the Statistical Model
-
-Before training the neural network, we first evaluate the quality of the statistical bigram model using **Negative Log Likelihood (NLL)**.
-
-For every bigram in the dataset:
-
-1. Find its probability from the probability matrix `P`.
-2. Compute its logarithm.
-3. Sum the log probabilities.
-4. Negate the result to obtain the Negative Log Likelihood.
-
-```python
-logprob = torch.log(prob)
-log_likelihood += logprob
-```
-
-The average NLL is computed as
-
-```python
-nll = -log_likelihood / n
-```
-
-A **smaller NLL** indicates a better language model because it assigns higher probabilities to the correct next characters.
-
----
-
-## Creating the Training Dataset
-
-The neural network learns from **input-output character pairs**.
-
-For every word,
-
-```
-emma
-```
-
-we generate
-
-```
-. -> e
-e -> m
-m -> m
-m -> a
-a -> .
-```
-
-The input character indices are stored in `xs`, while the corresponding target character indices are stored in `ys`.
-
----
-
-## One-Hot Encoding
-
-Neural networks cannot directly process integer indices.
-
-Each input character is converted into a **one-hot vector** of length 27.
-
-Example:
-
-```
-Character: c
-
-[0 0 1 0 0 ... 0]
-```
-
-Only the position corresponding to the current character is set to **1**.
-
----
-
-## Single Layer Neural Network
-
-The network consists of a single weight matrix.
-
-```python
-W = torch.randn((27,27))
-```
-
-- 27 input features
-- 27 output neurons
-
-Each neuron predicts the score for one possible next character.
-
----
-
-## Forward Pass
-
-The network computes
-
-```python
-logits = xenc @ W
-```
-
-where
-
-- `xenc` is the one-hot encoded input.
-- `W` is the learnable weight matrix.
-- `logits` are the raw prediction scores.
-
-These scores are **not probabilities**.
-
----
-
-## Converting Scores into Probabilities
-
-The logits are transformed into positive values using the exponential function.
-
-```python
-counts = logits.exp()
-```
-
-These values are then normalized.
-
-```python
-probs = counts / counts.sum(1, keepdim=True)
-```
-
-Every row now represents a valid probability distribution whose values sum to **1**.
-
----
-
-## Computing the Loss
-
-For every training example, the network selects the probability assigned to the correct next character.
-
-```python
-loss = -probs[torch.arange(5), ys].log().mean()
-```
-
-This is the **Average Negative Log Likelihood (NLL)**.
-
-A lower loss means the network is assigning higher probabilities to the correct character transitions.
-
----
-
-## Optimization
-
-The network starts with randomly initialized weights.
-
-```python
-W = torch.randn((27,27), requires_grad=True)
-```
-
-Setting `requires_grad=True` tells PyTorch to compute gradients during backpropagation.
-
-During training:
-
-1. Perform a forward pass.
-2. Compute the loss.
-3. Calculate gradients.
-4. Update the weights.
-
-After many iterations, the weight matrix learns the character transition probabilities directly from the data.
-
----
-
-## Summary
-
-This implementation replaces the manually constructed bigram probability matrix with a neural network.
-
-The overall pipeline is:
-
-```
-Training Words
+Read Text
       │
       ▼
-Create Bigrams
+Vocabulary
       │
       ▼
-One-Hot Encoding
+Encode
       │
       ▼
-Matrix Multiplication
+Tensor
+      │
+      ▼
+Train / Validation Split
+      │
+      ▼
+Random Batch Generator
+      │
+      ▼
+Embedding Layer
       │
       ▼
 Logits
       │
       ▼
-Exponential
-      │
-      ▼
-Probabilities
-      │
-      ▼
-Negative Log Likelihood
+Cross Entropy Loss
       │
       ▼
 Backpropagation
       │
       ▼
-Update Weights
+AdamW Optimizer
+      │
+      ▼
+Updated Weights
+      │
+      ▼
+Generate Text
 ```
 
-Although this network contains only a single linear layer, it introduces the complete neural network training pipeline that will later be extended into deeper models and eventually transformer-based language models.
+---
+
+# Learning Outcomes
+
+After completing this project, I understood
+
+- Character-level tokenization
+- Vocabulary generation
+- Encoding and decoding
+- PyTorch tensors
+- Embedding layers
+- Batch creation
+- Forward propagation
+- Cross Entropy Loss
+- Gradient descent
+- Backpropagation
+- AdamW optimizer
+- Character-level text generation
+
+---
+
+# Future Improvements
+
+This repository currently implements a **Bigram Language Model**.
+
+Future updates will include
+
+- Positional Encoding
+- Self Attention
+- Multi Head Attention
+- Feed Forward Networks
+- Residual Connections
+- Layer Normalization
+- Transformer Blocks
+- Complete GPT Architecture
+- Improved Text Generation
+- Model Checkpointing
+
+---
+
+# Acknowledgements
+
+This implementation is inspired by
+
+**Andrej Karpathy's "Let's build GPT from scratch"**
+
+The purpose of this repository is educational and follows the concepts explained in the NanoGPT project while being implemented independently as part of my own learning journey.
+
+---
+
+# License
+
+This project is intended for educational purposes.
