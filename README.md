@@ -82,7 +82,7 @@ Everything is written manually without using pretrained models.
 Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/NanoGPT.git
+git clone https://github.com/vnshsharma/NanoGPT.git
 ```
 
 Move into the project
